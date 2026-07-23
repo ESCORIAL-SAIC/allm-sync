@@ -24,6 +24,8 @@ class Config:
     dry_run: bool = False
     log_level: str = "INFO"
     state_db_path: str = "/state/sync.sqlite"
+    # Timeout HTTP por request (s). Embeber un doc puede tardar mucho; default generoso.
+    http_timeout: int = 600
 
     @property
     def max_file_bytes(self) -> int:
@@ -59,6 +61,7 @@ def load_config(config_path: str | None = None) -> Config:
         dry_run=_as_bool(os.getenv("DRY_RUN"), default=bool(data.get("dry_run", False))),
         log_level=str(data.get("log_level", "INFO")).upper(),
         state_db_path=os.getenv("STATE_DB_PATH", "/state/sync.sqlite"),
+        http_timeout=int(os.getenv("ALLM_TIMEOUT", str(data.get("http_timeout", 600)))),
     )
 
 

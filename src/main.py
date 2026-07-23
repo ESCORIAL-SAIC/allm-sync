@@ -48,7 +48,7 @@ def main() -> int:
     signal.signal(signal.SIGTERM, _handle_signal)
     signal.signal(signal.SIGINT, _handle_signal)
 
-    client = AllmClient(cfg.base_url, cfg.api_key)
+    client = AllmClient(cfg.base_url, cfg.api_key, timeout=cfg.http_timeout)
 
     # Verificación de conectividad/credenciales antes de empezar el loop.
     try:
@@ -61,7 +61,7 @@ def main() -> int:
         return 1
 
     state = State(cfg.state_db_path)
-    reconciler = Reconciler(cfg, client, state)
+    reconciler = Reconciler(cfg, client, state, heartbeat=_beat)
 
     try:
         _beat()  # heartbeat inicial: el proceso está vivo aunque el 1er ciclo tarde

@@ -27,10 +27,12 @@ class CycleStats:
 
 
 class Reconciler:
-    def __init__(self, cfg, client: AllmClient, state: State):
+    def __init__(self, cfg, client: AllmClient, state: State, heartbeat=None):
         self.cfg = cfg
         self.client = client
         self.state = state
+        # callback opcional para refrescar liveness durante ciclos largos (por archivo)
+        self._heartbeat = heartbeat or (lambda: None)
         # cache nombre_workspace -> (slug, doc_folder) para no repetir llamadas por ciclo
         self._ws_cache: dict[str, tuple[str, str]] = {}
         self._ws_listing_loaded = False
@@ -60,6 +62,7 @@ class Reconciler:
             except OSError as exc:
                 stats.errors += 1
                 log.error("Error de E/S en %s: %s", sf.rel_path, exc)
+            self._heartbeat()  # el ciclo inicial puede durar horas; mantener liveness
 
         # Borrados: filas en DB cuyo archivo ya no está en el share.
         for rel_path in self.state.all_file_paths() - seen_paths:
@@ -68,6 +71,7 @@ class Reconciler:
             except AllmError as exc:
                 stats.errors += 1
                 log.error("Error borrando %s: %s", rel_path, exc)
+            self._heartbeat()
 
         return stats
 
