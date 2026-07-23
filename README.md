@@ -50,23 +50,40 @@ descomentá el bloque `extra_hosts` en `docker-compose.yml`.
 Ajustá `config.yaml` si querés (extensiones, exclusiones, intervalo, `max_file_mb`,
 `exclude_top_folders`).
 
-## Probar antes de tocar nada (dry-run)
+## Desplegar (imagen de GHCR)
 
-Poné `dry_run: true` en `config.yaml` (o `DRY_RUN=true` en `.env`) y levantá:
-
-```bash
-docker compose up --build
-```
-
-En los logs vas a ver qué workspaces crearía y qué archivos subiría/borraría, sin
-modificar AnythingLLM. Cuando estés conforme, poné `dry_run: false`.
-
-## Desplegar
+La imagen se publica en `ghcr.io/escorial-saic/allm-sync`. El compose la baja
+(no la construye). Como el repo es privado, el package nace **privado**: la VM
+necesita autenticarse una vez contra GHCR (o hacer público el package).
 
 ```bash
-docker compose up -d --build
-docker compose logs -f allm-sync
+# 1. Login a GHCR (una vez en la VM). Necesita un PAT con scope read:packages.
+echo <TU_PAT_read:packages> | docker login ghcr.io -u <tu_usuario_github> --password-stdin
+
+# 2. Primer arranque EN SECO (el .env ya trae DRY_RUN=true):
+docker compose pull
+docker compose up -d
+docker compose logs -f allm-sync   # revisá qué workspaces/archivos tocaría
+
+# 3. Cuando estés conforme, poné DRY_RUN=false en .env y recreá:
+docker compose up -d
 ```
+
+Para fijar una versión concreta en vez de `:latest`, seteá `IMAGE_TAG=0.0.1` en `.env`.
+
+> Alternativa al login: hacer el package **público** en GitHub
+> (Org → Packages → allm-sync → Package settings → Change visibility).
+
+## Versionado y publicación (CI)
+
+- **PR → `main`** al mergear: release final `vX.Y.Z` → imágenes `:X.Y.Z`, `:X.Y`, `:latest`.
+- **PR → `dev`** al mergear: pre-release `vX.Y.Z-rc.N` → imágenes `:X.Y.Z-rc.N`, `:dev`.
+- El **bump** lo decide una label en la PR: `release:major` / `release:minor` /
+  default `patch` / `release:skip` (no versiona).
+- Cada commit también genera `:sha-XXXXXXX`.
+
+El estado inicial publicado es `v0.0.1`. Para cortar la primera minor `v0.1.0`,
+abrí una PR a `main` con la label `release:minor`.
 
 ## Verificación end-to-end
 
