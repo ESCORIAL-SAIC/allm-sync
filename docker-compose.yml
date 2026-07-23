@@ -1,7 +1,9 @@
 # Despliegue en la VM Debian donde corre AnythingLLM.
 #
-# AnythingLLM se alcanza por su URL pública (ALLM_BASE_URL en .env), así que este
-# container NO necesita estar en la red interna de AnythingLLM.
+# allm-sync se conecta DIRECTO al container de AnythingLLM por la red interna
+# (anythingllm_default), evitando el reverse proxy (nginx-proxy-manager). Así no
+# hay 504 por timeout de embedding ni 413 por tamaño de archivo.
+# -> en .env: ALLM_BASE_URL=http://anythingllm:3001
 #
 # Los secretos van en .env (ver .env / .env.example). NO se commitea.
 
@@ -28,10 +30,15 @@ services:
       options:
         max-size: "10m"
         max-file: "5"
-    # Si el container NO logra resolver el hostname de ALLM_BASE_URL (DNS interno),
-    # descomentá y ajustá la IP del host/proxy que sirve llm.escorialsa.com.ar:
-    # extra_hosts:
-    #   - "llm.escorialsa.com.ar:192.168.1.XXX"
+    networks:
+      - allm_net
+
+networks:
+  # Red EXTERNA de AnythingLLM (docker network ls -> anythingllm_default).
+  # Permite alcanzar el container por su nombre: http://anythingllm:3001
+  allm_net:
+    external: true
+    name: anythingllm_default
 
 volumes:
   # Volumen CIFS que monta el share de Windows. Los valores SMB_* salen del .env.
