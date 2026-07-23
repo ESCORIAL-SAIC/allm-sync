@@ -1,0 +1,46 @@
+# Configuración NO secreta del sincronizador.
+# Los secretos (URL, API key, ruta del share) van en variables de entorno / .env
+# Ver .env.example
+
+# Cada cuántos segundos se escanea el share y se reconcilia contra AnythingLLM.
+poll_interval_seconds: 60
+
+# Extensiones de archivo a sincronizar (sin punto, minúsculas).
+# Se ignoran las que no estén en esta lista.
+include_extensions:
+  - pdf
+  - docx
+  - doc
+  - txt
+  - md
+  - xlsx
+  - xls
+  - pptx
+  - ppt
+  - csv
+  - html
+  - htm
+  - json
+
+# Patrones glob (sobre el nombre de archivo) que se excluyen siempre.
+# Cubre temporales de Office (~$...), archivos .tmp y ocultos.
+exclude_globs:
+  - "~$*"
+  - "*.tmp"
+  - ".*"
+  - "Thumbs.db"
+  - "desktop.ini"
+
+# Carpetas de PRIMER NIVEL (nombres exactos) a ignorar por completo.
+exclude_top_folders:
+  - "Papelera"
+  - "Temp"
+
+# Archivos más grandes que esto (MB) se saltan y se loguean.
+max_file_mb: 50
+
+# Si es true, no se hace ningún cambio en AnythingLLM: solo se loguea qué se haría.
+dry_run: false
+
+# Nivel de log: DEBUG, INFO, WARNING, ERROR
+log_level: INFO

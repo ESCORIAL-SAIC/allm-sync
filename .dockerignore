@@ -1,0 +1,14 @@
+.git
+.gitignore
+.gitattributes
+.github
+.env
+.env.example
+state/
+*.sqlite
+*.sqlite3
+__pycache__/
+*.pyc
+.venv/
+venv/
+README.md

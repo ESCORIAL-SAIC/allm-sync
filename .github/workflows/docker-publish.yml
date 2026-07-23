@@ -1,0 +1,61 @@
+name: Build and publish Docker image
+
+# Publica en GHCR con versionado SemVer automático (ver .github/scripts/compute-version.sh).
+# Worker (sin API HTTP): sólo requiere que el Dockerfile acepte --build-arg VERSION.
+# Imagen por defecto: ghcr.io/escorial-saic/allm-sync (derivada del repo).
+
+on:
+  push:
+    branches: [main, dev]
+    tags: ['v*.*.*']
+  workflow_dispatch:
+
+permissions:
+  contents: write   # crear/pushear tags de versión
+  packages: write   # publicar en GHCR
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # el cálculo de versión necesita toda la historia y los tags
+
+      - name: Configure git identity
+        run: |
+          git config user.name  'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Login to ghcr.io
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Determine version
+        id: ver
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash .github/scripts/compute-version.sh
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64
+          build-args: |
+            VERSION=${{ steps.ver.outputs.version }}
+          tags: ${{ steps.ver.outputs.tags }}
+          labels: |
+            org.opencontainers.image.version=${{ steps.ver.outputs.version }}
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

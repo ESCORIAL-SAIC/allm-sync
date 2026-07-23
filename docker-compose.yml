@@ -1,0 +1,39 @@
+# Despliegue en la VM Debian donde corre AnythingLLM.
+#
+# AnythingLLM se alcanza por su URL pública (ALLM_BASE_URL en .env), así que este
+# container NO necesita estar en la red interna de AnythingLLM.
+#
+# Los secretos van en .env (ver .env / .env.example). NO se commitea.
+
+services:
+  allm-sync:
+    # Deploy: baja la imagen publicada en GHCR. Fijá una versión con IMAGE_TAG en .env
+    # (p. ej. IMAGE_TAG=0.1.0); por defecto usa :latest.
+    image: ghcr.io/escorial-saic/allm-sync:${IMAGE_TAG:-latest}
+    # Para desarrollo local podés construir en vez de bajar: comentá 'image' y descomentá:
+    # build: .
+    container_name: allm-sync
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      ROOT_PATH: /data/documentos
+      STATE_DB_PATH: /state/sync.sqlite
+    volumes:
+      - docs:/data/documentos:ro   # share de Windows, montado read-only
+      - state:/state               # DB de estado persistente
+    # Si el container NO logra resolver el hostname de ALLM_BASE_URL (DNS interno),
+    # descomentá y ajustá la IP del host/proxy que sirve llm.escorialsa.com.ar:
+    # extra_hosts:
+    #   - "llm.escorialsa.com.ar:192.168.1.XXX"
+
+volumes:
+  # Volumen CIFS que monta el share de Windows. Los valores SMB_* salen del .env.
+  docs:
+    driver: local
+    driver_opts:
+      type: cifs
+      device: ${SMB_DEVICE}
+      o: "username=${SMB_USER},password=${SMB_PASS},domain=${SMB_DOMAIN},vers=${SMB_VERS},ro,uid=1000,gid=1000,file_mode=0440,dir_mode=0550,iocharset=utf8"
+  state:
+    driver: local
