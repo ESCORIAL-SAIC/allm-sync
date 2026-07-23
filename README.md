@@ -98,10 +98,13 @@ abrí una PR a `main` con la label `release:minor`.
 
 - **`ROOT_PATH ... no existe`**: el montaje CIFS falló. Probá el share a mano:
   ```bash
-  sudo mount -t cifs //SERVIDOR/Recurso /mnt/test \
-    -o username=USUARIO,password=CLAVE,domain=DOMINIO,vers=3.0,ro
+  sudo mount -t cifs "//192.168.1.116/SGC Escorial" /mnt/test \
+    -o username=infodba,password=CLAVE,vers=3.0,ro
   ```
   Ajustá `SMB_VERS` (1.0/2.0/2.1/3.0) según el fileserver.
+- **`invalid argument` al montar**: casi siempre es un `domain=` vacío en las
+  opciones. Para cuentas locales, **no** incluyas `domain=` (ya está sacado del
+  compose). Si tu fileserver usa dominio, agregá `,domain=TU_DOMINIO` a la línea `o:`.
 - **`auth=false` / no contacta AnythingLLM**: revisá `ALLM_BASE_URL`, que el
   container esté en la misma red (`allm_net`) y que `ALLM_API_KEY` sea válida.
 - **Un path de la API falla (404)**: verificá los endpoints contra el Swagger de
