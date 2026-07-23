@@ -8,10 +8,20 @@ from __future__ import annotations
 import fnmatch
 import hashlib
 import logging
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
 log = logging.getLogger("allm.scanner")
+
+# Prefijo tipo "01- ", "11 - ", "03-" al inicio del nombre de carpeta. Se saca para
+# derivar el nombre del workspace (p. ej. "03- RRHH" -> "RRHH").
+_PREFIX_RE = re.compile(r"^\s*\d+\s*-\s*")
+
+
+def workspace_name_from_folder(folder: str) -> str:
+    name = _PREFIX_RE.sub("", folder).strip()
+    return name or folder
 
 
 @dataclass
@@ -34,7 +44,8 @@ def scan(root: str, include_ext: set[str], exclude_globs: list[str],
         if top.name in exclude_top:
             log.debug("Carpeta de primer nivel excluida: %s", top.name)
             continue
-        workspace_name = top.name
+        # El workspace se nombra sin el prefijo numérico ("03- RRHH" -> "RRHH").
+        workspace_name = workspace_name_from_folder(top.name)
         for f in top.rglob("*"):
             if not f.is_file():
                 continue

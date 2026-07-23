@@ -35,14 +35,13 @@ services:
 
 volumes:
   # Volumen CIFS que monta el share de Windows. Los valores SMB_* salen del .env.
-  # NOTA: no se pasa 'domain=' porque un valor vacío rompe el mount con "invalid argument"
-  # (probado). La cuenta 'infodba' es local al fileserver. Si algún día necesitás un
-  # dominio, agregá ',domain=TU_DOMINIO' al final de la línea 'o:'.
+  # OJO: SMB_DOMAIN debe tener valor (dominio real). Un 'domain=' vacío rompe el
+  # mount con "invalid argument" (probado). Montaje validado read-only OK.
   docs:
     driver: local
     driver_opts:
       type: cifs
       device: ${SMB_DEVICE}
-      o: "username=${SMB_USER},password=${SMB_PASS},vers=${SMB_VERS},ro,uid=1000,gid=1000,file_mode=0440,dir_mode=0550,iocharset=utf8"
+      o: "username=${SMB_USER},password=${SMB_PASS},domain=${SMB_DOMAIN},vers=${SMB_VERS},ro,uid=1000,gid=1000,file_mode=0440,dir_mode=0550,iocharset=utf8"
   state:
     driver: local
